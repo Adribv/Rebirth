@@ -32,7 +32,7 @@ export class ContentGenerator {
           }
         ],
         temperature: 0.7,
-        max_tokens: this.getMaxTokens(request.length),
+        max_tokens: this.getMaxTokens(request.length || 'medium'),
       });
 
       const generatedText = completion.choices[0]?.message?.content;
@@ -57,8 +57,8 @@ export class ContentGenerator {
     const { transcript, type, title, category, tags, tone, length } = request;
     
     const contentTypeInstructions = this.getContentTypeInstructions(type);
-    const toneInstructions = this.getToneInstructions(tone);
-    const lengthInstructions = this.getLengthInstructions(length);
+    const toneInstructions = this.getToneInstructions((tone || 'professional') as 'professional' | 'casual' | 'academic' | 'conversational');
+    const lengthInstructions = this.getLengthInstructions((length || 'medium') as 'short' | 'medium' | 'long');
     
     return `
 Please transform the following meeting transcript into ${type.toLowerCase()} content.
@@ -124,7 +124,7 @@ Focus on:
   /**
    * Get tone instructions
    */
-  private static getToneInstructions(tone: string): string {
+  private static getToneInstructions(tone: 'professional' | 'casual' | 'academic' | 'conversational'): string {
     switch (tone) {
       case 'professional':
         return 'Use formal, business-appropriate language with industry terminology. Maintain a professional and authoritative tone.';
@@ -142,7 +142,7 @@ Focus on:
   /**
    * Get length instructions
    */
-  private static getLengthInstructions(length: string): string {
+  private static getLengthInstructions(length: 'short' | 'medium' | 'long'): string {
     switch (length) {
       case 'short':
         return 'Keep the content concise and focused. Aim for 300-500 words.';
@@ -158,7 +158,7 @@ Focus on:
   /**
    * Get maximum tokens based on content length
    */
-  private static getMaxTokens(length: string): number {
+  private static getMaxTokens(length: 'short' | 'medium' | 'long'): number {
     switch (length) {
       case 'short':
         return 1000;
