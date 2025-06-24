@@ -244,8 +244,8 @@ Focus on:
       this.generateContent({
         transcript,
         type: variation.type,
-        tone: variation.tone,
-        length: variation.length
+        tone: variation.tone as 'professional' | 'casual' | 'academic' | 'conversational',
+        length: variation.length as 'short' | 'medium' | 'long'
       })
     );
 
