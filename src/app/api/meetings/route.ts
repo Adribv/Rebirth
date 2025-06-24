@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     if (source === 'meetstream') {
       // Fetch meetings from Meetstream.ai
-      const meetstreamMeetings = await MeetstreamAPI.getMeetings();
+      const meetstreamMeetings = await MeetstreamAPI.getBots();
       
       return NextResponse.json<ApiResponse>({
         success: true,
