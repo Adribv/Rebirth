@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  meetings    Meeting[]
+  contents    Content[]
+  analytics   Analytics[]
+  bots        Bot[]
+
+  @@map("users")
+}
+
+model Meeting {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  meetingId   String   @unique // Meetstream.ai meeting ID
+  transcript  String
+  duration    Int      // in seconds
+  participants String[] // array of participant names
+  status      MeetingStatus @default(PROCESSING)
+  metadata    Json?    // additional meeting metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contents  Content[]
+  bots      Bot[]
+
+  @@map("meetings")
+}
+
+model Content {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  content     String
+  summary     String?
+  type        ContentType
+  category    String?
+  tags        String[]
+  seoData     Json?    // SEO metadata
+  metadata    Json?    // generation metadata (tone, length, keyTakeaways, etc.)
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  views       Int      @default(0)
+
+  // Relations
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meetingId String?  @db.ObjectId
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  analytics Analytics[]
+
+  @@map("contents")
+}
+
+model Analytics {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      AnalyticsType
+  data      Json     // analytics data
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId String?  @db.ObjectId
+  content   Content? @relation(fields: [contentId], references: [id], onDelete: SetNull)
+
+  @@map("analytics")
+}
+
+model ProcessingJob {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      JobType
+  status    JobStatus @default(PENDING)
+  data      Json     // job data
+  result    Json?    // job result
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("processing_jobs")
+}
+
+model Bot {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  botId         String   @unique // Meetstream.ai bot ID
+  name          String
+  meetingUrl    String
+  status        BotStatus @default(JOINING)
+  transcriptId  String?  // Meetstream.ai transcript ID
+  transcriptionType TranscriptionType @default(POST_MEETING)
+  metadata      Json?    // additional bot metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  meetingId String?  @db.ObjectId
+
+  @@map("bots")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum MeetingStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ContentType {
+  ARTICLE
+  BLOG_POST
+  SOCIAL_MEDIA
+  NEWSLETTER
+  WHITEPAPER
+  CASE_STUDY
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnalyticsType {
+  CONTENT_VIEW
+  CONTENT_ENGAGEMENT
+  GENERATION_SUCCESS
+  POPULAR_TOPICS
+  REAL_TIME_STATS
+}
+
+enum JobType {
+  TRANSCRIPT_PROCESSING
+  CONTENT_GENERATION
+  SEO_OPTIMIZATION
+  CONTENT_CATEGORIZATION
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BotStatus {
+  JOINING
+  ACTIVE
+  INACTIVE
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum TranscriptionType {
+  REALTIME
+  POST_MEETING
+} 
